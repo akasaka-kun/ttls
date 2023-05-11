@@ -1,2 +1,6 @@
 TO_RENDER = []
 TO_UPDATE = []
+
+ENEMIES = []
+
+DANMAKU_UPDATES = []

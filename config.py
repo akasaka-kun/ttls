@@ -7,7 +7,8 @@ keyboard_controls = {
     pygame.K_a: "left",
     pygame.K_s: "down",
     pygame.K_d: "right",
-    pygame.K_LSHIFT: "focus"
+    pygame.K_LSHIFT: "focus",
+    pygame.K_UP: "shoot"
 }
 
 # game configs

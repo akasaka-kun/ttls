@@ -30,11 +30,14 @@ while True:
 
     dt = clk.tick(60) / 1000  # todo maybe independent tick rate
     time += dt
+    print(1/dt)
 
     for t in list(levels.Default):
         if t < time:
             levels.Default.pop(t).proc()
 
+    for i in GLOBAL.DANMAKU_UPDATES:
+        i.provide([player, *GLOBAL.ENEMIES])
     for i in GLOBAL.TO_UPDATE:
         i.update(dt)
 
