@@ -16,11 +16,16 @@ V = 200
 
 class test_bullet(projectile.projectile):
     surface = [(b := pygame.Surface((10, 10))).fill((255, 0, 0)), b][1]  # this is cursed and I love it
+    collider = ("circle", 5)
     SPEED = 300
 
     @staticmethod
     def update_pos(pos, time, **kwargs) -> dict:
         return {"pos": kwargs["spawn_pos"] + (numpy.array([math.cos(kwargs["dir"]), math.sin(kwargs["dir"])], dtype=float) * (time*test_bullet.SPEED))}
+
+    @staticmethod
+    def new_bullet() -> dict:
+        return {"damage": 20}
 
 
 class Player(Renderable):

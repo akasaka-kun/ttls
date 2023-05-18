@@ -30,7 +30,6 @@ while True:
 
     dt = clk.tick(60) / 1000  # todo maybe independent tick rate
     time += dt
-    print(1/dt)
 
     for t in list(levels.Default):
         if t < time:
