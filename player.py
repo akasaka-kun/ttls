@@ -40,6 +40,7 @@ class Player(Renderable):
         self.danmaku = projectile.Danmaku(test_bullet, self.faction)
         self.bulletCD = 0
 
+        # todo change this for a @property that returns the right animation frame
         S = pygame.Surface((20, 20)).convert_alpha()
         S.fill((255, 0, 0, 255))
         self.surface = S
@@ -51,7 +52,7 @@ class Player(Renderable):
     def update(self, dt):
         self.v.fill(0)
         self.bulletCD = max(0, self.bulletCD-dt)
-        for a in self.controller.actions:  # todo state detection for animation system
+        for a in self.controller.actions:  # todo list all concurrent actions
             match a:
 
                 # move
