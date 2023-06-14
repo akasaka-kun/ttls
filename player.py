@@ -3,6 +3,7 @@ import math
 import numpy
 import pygame
 
+import animation_manager
 import projectile
 from misc import bind
 from config import bound_rect
@@ -44,6 +45,20 @@ class Player(Renderable):
         S = pygame.Surface((20, 20)).convert_alpha()
         S.fill((255, 0, 0, 255))
         self.surface = S
+
+        self.asm = animation_manager.state_manager({
+            frozenset(("moveUp",)): ("moveUp", 1),
+            frozenset(("moveDown",)): ("moveDown", 1),
+            frozenset(("moveLeft",)): ("moveLeft", 1),
+            frozenset(("moveRight",)): ("moveRight", 1),
+
+            frozenset(("moveUp", "moveLeft")): ("moveUpLeft", 2),
+            frozenset(("moveUp", "moveRight")): ("moveUpRight", 2),
+            frozenset(("moveDown", "moveLeft")): ("moveDownLeft", 2),
+            frozenset(("moveDown", "moveRight")): ("moveDownRight", 2),
+
+            frozenset(("focus",)): ("focus", 3)
+        })
 
     @property
     def pos(self):
