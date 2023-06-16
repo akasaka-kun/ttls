@@ -21,7 +21,7 @@ class state_manager:
             if all(i in actions for i in c):
                 if current[1] < s[1]:
                     current = s
-        return current
+        return current[0]
 
 
 class animation:
