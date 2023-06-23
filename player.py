@@ -3,7 +3,6 @@ import math
 import numpy
 import pygame
 
-import animation_manager
 import projectile
 from misc import bind
 from config import bound_rect
@@ -28,6 +27,21 @@ class test_bullet(projectile.projectile):
 class Player(Renderable):
     BULLET_DELAY = .150
 
+    ANIMATION_FRAME_DURATION = 8
+    ANIMATION_STATES = {
+        frozenset(("moveUp",)): ("moveUp", 1),
+        frozenset(("moveDown",)): ("moveDown", 1),
+        frozenset(("moveLeft",)): ("moveLeft", 1),
+        frozenset(("moveRight",)): ("moveRight", 1),
+
+        frozenset(("moveUp", "moveLeft")): ("moveUpLeft", 2),
+        frozenset(("moveUp", "moveRight")): ("moveUpRight", 2),
+        frozenset(("moveDown", "moveLeft")): ("moveDownLeft", 2),
+        frozenset(("moveDown", "moveRight")): ("moveDownRight", 2),
+
+        frozenset(("focus",)): ("Focus", 10)
+    }
+
     def __init__(self, controller):
         GLOBAL.TO_RENDER.append(self)
         GLOBAL.TO_UPDATE.append(self)
@@ -41,27 +55,14 @@ class Player(Renderable):
         self.danmaku = projectile.Danmaku(test_bullet, self.faction)
         self.bulletCD = 0
 
-        # todo change this for a @property that returns the right animation frame
         S = pygame.Surface((20, 20)).convert_alpha()
         S.fill((255, 0, 0, 255))
         self.default_surface = S
 
-        self.asm = animation_manager.state_manager({
-            frozenset(("moveUp",)): ("moveUp", 1),
-            frozenset(("moveDown",)): ("moveDown", 1),
-            frozenset(("moveLeft",)): ("moveLeft", 1),
-            frozenset(("moveRight",)): ("moveRight", 1),
-
-            frozenset(("moveUp", "moveLeft")): ("moveUpLeft", 2),
-            frozenset(("moveUp", "moveRight")): ("moveUpRight", 2),
-            frozenset(("moveDown", "moveLeft")): ("moveDownLeft", 2),
-            frozenset(("moveDown", "moveRight")): ("moveDownRight", 2),
-
-            frozenset(("focus",)): ("Focus", 3)
-        })
-        self.texture_atlas = Atlas('textures/character.png', (22, 21),
-                                   ["moveRight", "moveDown", "moveLeft", "moveUp", "moveUpRight", "moveDownRight", "moveDownLeft", "moveUpLeft", "Focus"],
-                                   [(0, 0, -1, -1)] * 9)
+        self.animation_state = ("", 1)
+        self.texture_atlas = Atlas('textures/character.png', (22, 20),
+                                   [i + str(j) for j in range(5) for i in ["moveRight", "moveDown", "moveLeft", "moveUp", "moveUpRight", "moveDownRight", "moveDownLeft", "moveUpLeft", "Focus"]],
+                                   [(0, 0, -1, 0)] * 9 * 5)
         self._actions = []
 
     @property
@@ -70,13 +71,22 @@ class Player(Renderable):
 
     @property
     def surface(self):
-        return self.texture_atlas.get(self.asm.get_state(self._actions), self.default_surface)
+
+        current = ("idle", 0)
+        for c, s in Player.ANIMATION_STATES.items():
+            if all(i in self._actions for i in c):
+                prio = s[1] + sum(n for n, a in enumerate(self._actions) if a in c)
+                if current[1] < prio:
+                    current = s[0], prio
+        self.animation_state = current[0], 0 if current[0] != self.animation_state[0] else (self.animation_state[1] + 1)
+        print(self.animation_state)
+        return pygame.transform.scale2x(self.texture_atlas.get(current[0] + str(self.animation_state[1] // Player.ANIMATION_FRAME_DURATION % 5), self.default_surface))
 
     def update(self, dt):
         self._actions = []
         self.v.fill(0)
         self.bulletCD = max(0, self.bulletCD - dt)
-        for a in self.controller.actions:  # todo list all concurrent actions
+        for a in self.controller.actions:
             match a:
 
                 # move
