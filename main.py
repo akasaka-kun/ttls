@@ -1,3 +1,5 @@
+import random
+
 import pygame
 import GLOBAL
 import levels
@@ -20,6 +22,7 @@ player = Player(keyboard)
 
 time = 0
 
+
 while True:
 
     for e in pygame.event.get():
@@ -35,11 +38,11 @@ while True:
         if t < time:
             levels.Default.pop(t).proc()
 
-    for i in GLOBAL.DANMAKU_UPDATES:
-        i.provide([player, *GLOBAL.ENEMIES])
     for i in GLOBAL.TO_UPDATE:
         i.update(dt)
 
     screen.fill((32, 32, 32))
+    for i in GLOBAL.PROJECTILE_GROUPS:  # todo put that shit in the renderer
+        i.draw(screen)
     screen.blit(render(GLOBAL.TO_RENDER), (0, 0))  # todo camera pos, either here or in render
     pygame.display.flip()
