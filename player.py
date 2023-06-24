@@ -31,6 +31,10 @@ class test_bullet(projectile.projectile):
     def new_bullet() -> dict:
         return {"damage": 20}
 
+    @staticmethod
+    def new_bullet() -> dict:
+        return {"damage": 20}
+
 
 class Player(Renderable):
 

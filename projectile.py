@@ -44,3 +44,12 @@ class Danmaku(pygame.sprite.Group):
 
     def add(self, *sprites: projectile) -> None:
         super().add(*sprites)
+
+    @staticmethod
+    def on_collision():  # for most cases you can leave this as is
+        return "delete"
+
+    @staticmethod
+    @abc.abstractmethod
+    def new_bullet() -> dict:
+        return {}
