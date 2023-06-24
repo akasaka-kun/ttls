@@ -15,13 +15,17 @@ V = 200
 
 
 class test_bullet(projectile.projectile):
-    surface = [(b := pygame.Surface((10, 10))).fill((255, 0, 0)), b][1]  # this is cursed and I love it
-    collider = ("circle", 5)
-    SPEED = 300
+    SPEED = 800
 
-    @staticmethod
-    def update_pos(pos, time, **kwargs) -> dict:
-        return {"pos": kwargs["spawn_pos"] + (numpy.array([math.cos(kwargs["dir"]), math.sin(kwargs["dir"])], dtype=float) * (time*test_bullet.SPEED))}
+    def __init__(self, pos, direction):
+        super().__init__(pos, [20, 5])
+        self.direction = direction
+        self.scalars = numpy.array([math.cos(self.direction), math.sin(self.direction)], dtype=float)
+        self.image = [(b := pygame.Surface((10, 10))).fill((255, 0, 0)), b][1]
+        self.damage = 15
+
+    def update(self, dt):
+        self.rect = pygame.Rect([*(self.rect.topleft + (self.scalars * (dt*test_bullet.SPEED))), *self.size])
 
     @staticmethod
     def new_bullet() -> dict:
@@ -42,7 +46,7 @@ class Player(Renderable):
         self.x = 500
         self.y = 800
 
-        self.danmaku = projectile.Danmaku(test_bullet, self.faction)
+        self.danmaku = projectile.Danmaku(self.faction)
         self.bulletCD = 0
 
         S = pygame.Surface((20, 20)).convert_alpha()
@@ -75,18 +79,18 @@ class Player(Renderable):
                 case "shootUp":
                     if self.bulletCD == 0:
                         self.bulletCD = Player.BULLET_DELAY
-                        self.danmaku.add_bullet(self.pos, dir=1.5*math.pi, spawn_pos=self.pos)
+                        self.danmaku.add(test_bullet(self.pos, direction=1.5*math.pi))
                 case "shootDown":
                     if self.bulletCD == 0:
                         self.bulletCD = Player.BULLET_DELAY
-                        self.danmaku.add_bullet(self.pos, dir=.5*math.pi, spawn_pos=self.pos)
+                        self.danmaku.add(test_bullet(self.pos, direction=.5*math.pi))
                 case "shootLeft":
                     if self.bulletCD == 0:
                         self.bulletCD = Player.BULLET_DELAY
-                        self.danmaku.add_bullet(self.pos, dir=math.pi, spawn_pos=self.pos)
+                        self.danmaku.add(test_bullet(self.pos, direction=math.pi))
                 case "shootRight":
                     if self.bulletCD == 0:
                         self.bulletCD = Player.BULLET_DELAY
-                        self.danmaku.add_bullet(self.pos, dir=0, spawn_pos=self.pos)
+                        self.danmaku.add(test_bullet(self.pos, direction=0))
 
         self.x, self.y = [bind(i, bound_rect[0][n], bound_rect[1][n]) for n, i in enumerate((self.x, self.y) + self.v * dt)]
