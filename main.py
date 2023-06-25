@@ -31,9 +31,7 @@ while True:
     dt = clk.tick(60) / 1000  # todo maybe independent tick rate
     time += dt
 
-    for t in list(levels.Default):
-        if t < time:
-            levels.Default.pop(t).proc()
+    levels.Default.proc_events(time)
 
     for i in GLOBAL.TO_UPDATE:
         i.update(dt)

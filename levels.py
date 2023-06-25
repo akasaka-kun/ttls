@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 from enemies import TestEnemy
 
 
@@ -12,8 +12,27 @@ class LEvent:
         return self.function(*self.args)
 
 
+class Level:
+
+    def __init__(self, events: Dict[float, List[LEvent] | LEvent]):
+        self.events = events
+
+    def proc_events(self, time):
+        to_remove = []
+        for t in self.events:
+            if t <= time:
+                to_proc = self.events[t]
+                to_remove.append(t)
+                if isinstance(to_proc, list):
+                    [e.proc() for e in to_proc]
+                else:
+                    to_proc.proc()
+        for k in to_remove:
+            self.events.pop(k)
+
+
 # todo change levels system to allow multiple simultaneous events
-Default: Dict[float, LEvent] = {
+Default = Level({
     1: LEvent(TestEnemy.spawn, [(200, 100)]),
     1.3: LEvent(TestEnemy.spawn, [(400, 100)]),
     1.6: LEvent(TestEnemy.spawn, [(600, 100)]),
@@ -26,4 +45,4 @@ Default: Dict[float, LEvent] = {
     5.3: LEvent(TestEnemy.spawn, [(400, 100)]),
     5.6: LEvent(TestEnemy.spawn, [(600, 100)]),
     5.9: LEvent(TestEnemy.spawn, [(800, 100)]),
-}
+})
