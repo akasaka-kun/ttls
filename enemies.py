@@ -1,7 +1,9 @@
 import math
-
 import numpy
 import pygame
+import beziers.cubicbezier as Curve
+from typing import Generator, Callable
+
 import GLOBAL
 from projectile import Projectile, Danmaku
 from collision import collider_sprite
@@ -52,12 +54,28 @@ class Enemy:
                 for projectile in collisions:
                     self.health -= projectile.damage
         if self.health <= 0:  # later : play death animations, drop stuff, this kinda shit
-            GLOBAL.TO_UPDATE.remove(self)
-            GLOBAL.TO_RENDER.remove(self)
-            del self
+            self.kill()
 
-    def move(self, vec):
-        self.x, self.y = self.pos + vec
+    def kill(self):
+        GLOBAL.TO_UPDATE.remove(self)
+        GLOBAL.TO_RENDER.remove(self)
+        del self
+
+    def move(self, vec=None, pos=None):
+        assert (vec is not None) != (pos is not None), "Provide either vec or pos but not both."
+        if vec is not None:
+            self.x, self.y = self.pos + vec
+        elif pos is not None:
+            self.x, self.y = pos
+
+    def path(self, curvePoints, duration):
+        t = 0
+        curve = Curve.QuadraticBezier(*curvePoints)
+        while t <= 1:
+            dt = yield
+            t += dt / duration
+            pat = curve.pointAtTime(t).rounded()
+            self.move(pos=[pat.x, pat.y])
 
 
 # botched together enemy, would be cool to have more of its code back in the Enemy class
@@ -92,6 +110,8 @@ class TestEnemy(Enemy):
         self.animation_frame_duration = 0.2
         self.animation_frame_count = 5
 
+        self.health = 30
+
         self.behavior_ = self.behavior()
 
         self.collider = collider_sprite(20)
@@ -101,18 +121,30 @@ class TestEnemy(Enemy):
         super(TestEnemy, self).update(dt)
         self.collider.rect = pygame.Rect(self.x, self.y, self.collider.size, self.collider.size)
         if self.current_action is None or self.current_action[1] == 0:
-            self.current_action = list(next(self.behavior_))
-            print(self.current_action)
+            try:
+                self.current_action = list(next(self.behavior_))
+                if isinstance(self.current_action[0], Generator): next(self.current_action[0])
+            except StopIteration:
+                self.kill()
+                return
+        action = self.current_action[0]
         action_time: float = min(dt, self.current_action[1])
-        self.current_action[0](action_time)
+        if isinstance(action, Generator):
+            action.send(action_time)
+        elif isinstance(action, Callable):
+            action(action_time)
         self.current_action[1] -= action_time
 
     def behavior(self):
-        while True:
+        self.animation_state = "moveRight"
+        yield self.path([Curve.Point(0, 0), Curve.Point(150, 200), Curve.Point(300, 200)], 1), 1
+        self.danmaku.add(self.test_bullet(self.collider.rect.center))
+
+        for i in range(3):
             self.animation_state = "moveRight"
-            yield (lambda dt: self.move([100 * dt, 0])), 1
+            yield (lambda dt: self.move([150 * dt, 0])), 1
             self.danmaku.add(self.test_bullet(self.collider.rect.center))
 
-            self.animation_state = "moveLeft"
-            yield (lambda dt: self.move([-100 * dt, 0])), 1
-            self.danmaku.add(self.test_bullet(self.collider.rect.center))
+        self.animation_state = "moveRight"
+        yield self.path([Curve.Point(750, 200), Curve.Point(1000, 200), Curve.Point(1000, 300)], 1), 1
+        self.danmaku.add(self.test_bullet(self.collider.rect.center))

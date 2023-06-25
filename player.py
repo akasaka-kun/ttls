@@ -13,7 +13,6 @@ from textures.atlas import Atlas
 from collision import collider_sprite
 
 
-
 class test_bullet(projectile.Projectile):
     SPEED = 2000
     (IMAGE := pygame.Surface((3, 10))).fill((255, 0, 0))
@@ -23,7 +22,7 @@ class test_bullet(projectile.Projectile):
         self.scalars = numpy.array([math.cos(self.direction), math.sin(self.direction)], dtype=float)
         self.image = pygame.transform.rotate(test_bullet.IMAGE, direction * (180 / math.pi) + 90)
         self.damage = 15
-        super().__init__(numpy.array(pos) - numpy.array(self.image.get_size()) // 2, [10, 5])
+        super().__init__(numpy.array(pos) - numpy.array(self.image.get_size()) // 2, [10, 20])
 
     def update(self, dt):
         self.pos = self.pos + (self.scalars * (dt * test_bullet.SPEED))
@@ -95,7 +94,7 @@ class Player(Renderable):
     def update(self, dt):
         self._actions = []
 
-        self.collider.rect = pygame.Rect(self.pos, [self.collider.size]*2)
+        self.collider.rect = pygame.Rect(self.pos, [self.collider.size] * 2)
 
         for i in GLOBAL.PROJECTILE_GROUPS:
             if i.faction != self.faction:

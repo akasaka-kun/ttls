@@ -10,10 +10,8 @@ class Atlas(dict):
 
         atlas_image = pygame.image.load(fn)
         atlas_size = atlas_image.get_size()
-        print(atlas_size)
         atlas_len = (atlas_size[0] // grid_size[0]) * (atlas_size[1] // grid_size[1])
 
-        print(atlas_len, len(names))
         assert atlas_len == len(names)
         if offsets: assert atlas_len == len(offsets)
 

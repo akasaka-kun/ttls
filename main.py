@@ -20,7 +20,6 @@ player = Player(keyboard)
 
 time = 0
 
-print([i.faction for i in GLOBAL.PROJECTILE_GROUPS])
 while True:
 
     for e in pygame.event.get():
