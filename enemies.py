@@ -12,7 +12,7 @@ from textures.atlas import Atlas
 
 class Enemy:
 
-    def __init__(self, pos):
+    def __init__(self, pos, *args):
         self.spawnx, self.spawny = self.spawn_pos = pos
         self.x, self.y = pos
         self.animation_state = ""
@@ -38,8 +38,8 @@ class Enemy:
         return numpy.array([self.x, self.y])
 
     @classmethod
-    def spawn(cls, pos):
-        new_enemy: Enemy = cls(pos)
+    def spawn(cls, pos, *args):
+        new_enemy: Enemy = cls(pos, *args)
         GLOBAL.TO_UPDATE.append(new_enemy)
         GLOBAL.TO_RENDER.append(new_enemy)
         GLOBAL.ENEMIES.append(new_enemy)
@@ -101,7 +101,7 @@ class TestEnemy(Enemy):
         def rect(self):
             return pygame.Rect(self.pos, self.size)
 
-    def __init__(self, pos):
+    def __init__(self, pos, spawn_side="left"):
         super().__init__(pos)
         self.texture_atlas = Atlas('textures/TestEnemy.png', (22, 20),
                                    [i + str(j) for j in range(5) for i in ["moveRight", "moveLeft"]],
@@ -109,6 +109,8 @@ class TestEnemy(Enemy):
         self.animation_state = ""
         self.animation_frame_duration = 0.2
         self.animation_frame_count = 5
+
+        self.spawn_side = spawn_side
 
         self.health = 30
 
@@ -136,15 +138,19 @@ class TestEnemy(Enemy):
         self.current_action[1] -= action_time
 
     def behavior(self):
-        self.animation_state = "moveRight"
-        yield self.path([Curve.Point(0, 0), Curve.Point(150, 200), Curve.Point(300, 200)], 1), 1
+        animation_side, V, path_in, path_out = {
+            "left": ["moveLeft", -150, [Curve.Point(1000, 0), Curve.Point(850, 200), Curve.Point(700, 200)], [Curve.Point(250, 200), Curve.Point(0, 200), Curve.Point(0, 300)]],
+            "right": ["moveRight", 150, [Curve.Point(0, 0), Curve.Point(150, 200), Curve.Point(300, 200)], [Curve.Point(750, 200), Curve.Point(1000, 200), Curve.Point(1000, 300)]]}[self.spawn_side]
+
+        self.animation_state = animation_side
+        yield self.path(path_in, 1), 1
         self.danmaku.add(self.test_bullet(self.collider.rect.center))
 
         for i in range(3):
-            self.animation_state = "moveRight"
-            yield (lambda dt: self.move([150 * dt, 0])), 1
+            self.animation_state = animation_side
+            yield (lambda dt: self.move([V * dt, 0])), 1
             self.danmaku.add(self.test_bullet(self.collider.rect.center))
 
-        self.animation_state = "moveRight"
-        yield self.path([Curve.Point(750, 200), Curve.Point(1000, 200), Curve.Point(1000, 300)], 1), 1
+        self.animation_state = animation_side
+        yield self.path(path_out, 1), 1
         self.danmaku.add(self.test_bullet(self.collider.rect.center))
