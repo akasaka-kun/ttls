@@ -5,6 +5,7 @@ import pygame
 import GLOBAL
 from projectile import Projectile, Danmaku
 from collision import collider_sprite
+from textures.atlas import Atlas
 
 
 class Enemy:
@@ -12,14 +13,23 @@ class Enemy:
     def __init__(self, pos):
         self.spawnx, self.spawny = self.spawn_pos = pos
         self.x, self.y = pos
-        self.surface: pygame.Surface
+        self.animation_state = ""
+        self.animation_frame_duration = 0.05
+        self.animation_frame_count = 1
 
         self.faction = "enemy"
         self.collider: pygame.sprite.Sprite | None = None
         self.collided = []
         self.health = 100  # OVERRIDE THIS IN YOUR ENEMY CLASS
 
+        self.texture_atlas: Atlas | None = None
+
         self.time = 0
+
+    @property
+    def surface(self):
+        frame_number = str(int(self.time // self.animation_frame_duration % self.animation_frame_count))
+        return pygame.transform.scale2x(self.texture_atlas.get(self.animation_state + frame_number, pygame.Surface((0, 0))))
 
     @property
     def pos(self):
@@ -45,6 +55,9 @@ class Enemy:
             GLOBAL.TO_UPDATE.remove(self)
             GLOBAL.TO_RENDER.remove(self)
             del self
+
+    def move(self, vec):
+        self.x, self.y = self.pos + vec
 
 
 # botched together enemy, would be cool to have more of its code back in the Enemy class
@@ -72,23 +85,34 @@ class TestEnemy(Enemy):
 
     def __init__(self, pos):
         super().__init__(pos)
-        S = pygame.Surface((20, 20)).convert_alpha()
-        S.fill((255, 255, 0, 255))
-        self.surface = S
+        self.texture_atlas = Atlas('textures/TestEnemy.png', (22, 20),
+                                   [i + str(j) for j in range(5) for i in ["moveRight", "moveLeft"]],
+                                   [(0, 0, -1, 0)] * 2 * 5)
+        self.animation_state = ""
+        self.animation_frame_duration = 0.2
+        self.animation_frame_count = 5
 
-        self.bulletCD = 3
-        self.bullet_CD_counter = self.bulletCD
+        self.behavior_ = self.behavior()
 
         self.collider = collider_sprite(20)
+        self.current_action = None
 
-    def update(self, dt):
+    def update(self, dt: float):
         super(TestEnemy, self).update(dt)
         self.collider.rect = pygame.Rect(self.x, self.y, self.collider.size, self.collider.size)
-        self.behavior(dt)
+        if self.current_action is None or self.current_action[1] == 0:
+            self.current_action = list(next(self.behavior_))
+            print(self.current_action)
+        action_time: float = min(dt, self.current_action[1])
+        self.current_action[0](action_time)
+        self.current_action[1] -= action_time
 
-    def behavior(self, dt):
-        self.x = self.spawnx + 50 * math.sin(self.time * 3)
-        self.bullet_CD_counter -= dt
-        if self.bullet_CD_counter <= 0:
-            self.bullet_CD_counter = self.bulletCD
-            TestEnemy.danmaku.add(TestEnemy.test_bullet(self.collider.rect.center))
+    def behavior(self):
+        while True:
+            self.animation_state = "moveRight"
+            yield (lambda dt: self.move([100 * dt, 0])), 1
+            self.danmaku.add(self.test_bullet(self.collider.rect.center))
+
+            self.animation_state = "moveLeft"
+            yield (lambda dt: self.move([-100 * dt, 0])), 1
+            self.danmaku.add(self.test_bullet(self.collider.rect.center))
