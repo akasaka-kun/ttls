@@ -12,33 +12,26 @@ from render import Renderable
 from textures.atlas import Atlas
 
 # noinspection SpellCheckingInspection
-V = 200
+V = 400
 
 
 class test_bullet(projectile.projectile):
-    SPEED = 800
+    SPEED = 2000
+    (IMAGE := pygame.Surface((3, 10))).fill((255, 0, 0))
 
     def __init__(self, pos, direction):
-        super().__init__(pos, [20, 5])
         self.direction = direction
         self.scalars = numpy.array([math.cos(self.direction), math.sin(self.direction)], dtype=float)
-        self.image = [(b := pygame.Surface((10, 10))).fill((255, 0, 0)), b][1]
+        self.image = pygame.transform.rotate(test_bullet.IMAGE, direction * (180 / math.pi) + 90)
         self.damage = 15
+        super().__init__(numpy.array(pos) - numpy.array(self.image.get_size()) // 2, [10, 5])
 
     def update(self, dt):
-        self.rect = pygame.Rect([*(self.rect.topleft + (self.scalars * (dt*test_bullet.SPEED))), *self.size])
-
-    @staticmethod
-    def new_bullet() -> dict:
-        return {"damage": 20}
-
-    @staticmethod
-    def new_bullet() -> dict:
-        return {"damage": 20}
+        self.rect = pygame.Rect([*(self.rect.topleft + (self.scalars * (dt * test_bullet.SPEED))), *self.size])
 
 
 class Player(Renderable):
-    BULLET_DELAY = .150
+    BULLET_DELAY = .050
 
     ANIMATION_FRAME_DURATION = 8
     ANIMATION_STATES = {
@@ -68,7 +61,8 @@ class Player(Renderable):
         self.danmaku = projectile.Danmaku(self.faction)
         self.bulletCD = 0
 
-        S = pygame.Surface((20, 20)).convert_alpha()
+        self.width, self.height = 40, 40
+        S = pygame.Surface((self.width / 2, self.height / 2)).convert_alpha()
         S.fill((255, 0, 0, 255))
         self.default_surface = S
 
@@ -120,21 +114,29 @@ class Player(Renderable):
                 case "shootUp":
                     if self.bulletCD == 0:
                         self.bulletCD = Player.BULLET_DELAY
-                        self.danmaku.add(test_bullet(self.pos, direction=1.5*math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 - 6, self.height], direction=1.5 * math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 + 6, self.height], direction=1.5 * math.pi))
+
                 case "shootDown":
                     if self.bulletCD == 0:
                         self.bulletCD = Player.BULLET_DELAY
-                        self.danmaku.add(test_bullet(self.pos, direction=.5*math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 - 6, 0], direction=.5 * math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 + 6, 0], direction=.5 * math.pi))
+
                 case "shootLeft":
                     if self.bulletCD == 0:
                         self.bulletCD = Player.BULLET_DELAY
-                        self.danmaku.add(test_bullet(self.pos, direction=math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width, self.height / 2 - 6], direction=math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width, self.height / 2 + 6], direction=math.pi))
+
                 case "shootRight":
                     if self.bulletCD == 0:
                         self.bulletCD = Player.BULLET_DELAY
-                        self.danmaku.add(test_bullet(self.pos, direction=0))
+                        self.danmaku.add(test_bullet(self.pos + [0, self.height / 2 - 6], direction=0))
+                        self.danmaku.add(test_bullet(self.pos + [0, self.height / 2 + 6], direction=0))
+
         if "focus" in self.controller.actions:
-            self.v /= 1.5
+            self.v /= 2.5
             self._actions.append("focus")
 
         self.x, self.y = [bind(i, bound_rect[0][n], bound_rect[1][n]) for n, i in enumerate((self.x, self.y) + self.v * dt)]
