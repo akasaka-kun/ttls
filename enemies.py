@@ -1,5 +1,4 @@
 import math
-from typing import Tuple
 
 import numpy
 import pygame
@@ -30,7 +29,7 @@ class Enemy:
     def spawn(cls, pos):
         new_enemy: Enemy = cls(pos)
         GLOBAL.TO_UPDATE.append(new_enemy)
-        if getattr(new_enemy, 'surface', None): GLOBAL.TO_RENDER.append(new_enemy)
+        GLOBAL.TO_RENDER.append(new_enemy)
         GLOBAL.ENEMIES.append(new_enemy)
         print(f'[spawned enemy] {new_enemy}')
         return new_enemy
@@ -47,12 +46,8 @@ class Enemy:
             GLOBAL.TO_RENDER.remove(self)
             del self
 
-    def handle_collision(self, collided_with: dict):
-        if collided_with.get("damage"):
-            self.health -= collided_with["damage"]
-            if self.health <= 0: print("DEAD")
 
-
+# botched together enemy, would be cool to have more of its code back in the Enemy class
 class TestEnemy(Enemy):
     danmaku = Danmaku("enemy")
 
@@ -92,7 +87,7 @@ class TestEnemy(Enemy):
         self.behavior(dt)
 
     def behavior(self, dt):
-        # self.x = self.spawnx + 50 * math.sin(self.time * 3)
+        self.x = self.spawnx + 50 * math.sin(self.time * 3)
         self.bullet_CD_counter -= dt
         if self.bullet_CD_counter <= 0:
             self.bullet_CD_counter = self.bulletCD

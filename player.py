@@ -12,8 +12,6 @@ from render import Renderable
 from textures.atlas import Atlas
 from collision import collider_sprite
 
-# noinspection SpellCheckingInspection
-V = 400
 
 
 class test_bullet(projectile.Projectile):
@@ -33,6 +31,7 @@ class test_bullet(projectile.Projectile):
 
 class Player(Renderable):
     BULLET_DELAY = .050
+    V = 400
 
     ANIMATION_FRAME_DURATION = 8
     ANIMATION_STATES = {
@@ -111,16 +110,16 @@ class Player(Renderable):
 
                 # move
                 case "up":
-                    self.v[1] = -V
+                    self.v[1] = -Player.V
                     self._actions.append("moveUp")
                 case "left":
-                    self.v[0] = -V
+                    self.v[0] = -Player.V
                     self._actions.append("moveLeft")
                 case "down":
-                    self.v[1] = V
+                    self.v[1] = Player.V
                     self._actions.append("moveDown")
                 case "right":
-                    self.v[0] = V
+                    self.v[0] = Player.V
                     self._actions.append("moveRight")
 
                 # shoot

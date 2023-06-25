@@ -1,5 +1,3 @@
-import random
-
 import pygame
 import GLOBAL
 import levels

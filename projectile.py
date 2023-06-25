@@ -1,11 +1,9 @@
 import abc
-import math
 from typing import Tuple
 
 import pygame
 
 import GLOBAL
-import config
 
 
 class Projectile(abc.ABC, pygame.sprite.Sprite):
