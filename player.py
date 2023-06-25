@@ -10,12 +10,13 @@ from config import bound_rect
 import GLOBAL
 from render import Renderable
 from textures.atlas import Atlas
+from collision import collider_sprite
 
 # noinspection SpellCheckingInspection
 V = 400
 
 
-class test_bullet(projectile.projectile):
+class test_bullet(projectile.Projectile):
     SPEED = 2000
     (IMAGE := pygame.Surface((3, 10))).fill((255, 0, 0))
 
@@ -27,7 +28,7 @@ class test_bullet(projectile.projectile):
         super().__init__(numpy.array(pos) - numpy.array(self.image.get_size()) // 2, [10, 5])
 
     def update(self, dt):
-        self.rect = pygame.Rect([*(self.rect.topleft + (self.scalars * (dt * test_bullet.SPEED))), *self.size])
+        self.pos = self.pos + (self.scalars * (dt * test_bullet.SPEED))
 
 
 class Player(Renderable):
@@ -52,6 +53,7 @@ class Player(Renderable):
     def __init__(self, controller):
         GLOBAL.TO_RENDER.append(self)
         GLOBAL.TO_UPDATE.append(self)
+        GLOBAL.PLAYER = self
         self.controller = controller
         self.faction = "player"
 
@@ -61,6 +63,7 @@ class Player(Renderable):
 
         self.danmaku = projectile.Danmaku(self.faction)
         self.bullet_CD_Timer = 0
+        self.collider = collider_sprite(5)
 
         self.width, self.height = 40, 40
         S = pygame.Surface((self.width / 2, self.height / 2)).convert_alpha()
@@ -87,12 +90,20 @@ class Player(Renderable):
                 if current[1] < prio:
                     current = s[0], prio
         self.animation_state = current[0], 0 if current[0] != self.animation_state[0] else (self.animation_state[1] + 1)
-        print(self.animation_state)
         frame_number = str(self.animation_state[1] // Player.ANIMATION_FRAME_DURATION % 5)
         return pygame.transform.scale2x(self.texture_atlas.get(current[0] + frame_number, self.texture_atlas.get("idle" + frame_number, self.default_surface)))
 
     def update(self, dt):
         self._actions = []
+
+        self.collider.rect = pygame.Rect(self.pos, [self.collider.size]*2)
+
+        for i in GLOBAL.PROJECTILE_GROUPS:
+            if i.faction != self.faction:
+                collisions = pygame.sprite.spritecollide(self.collider, i, True, pygame.sprite.collide_circle)
+                if collisions:
+                    print("deht")
+
         self.v.fill(0)
         self.bullet_CD_Timer = max(0, self.bullet_CD_Timer - dt)
         for a in self.controller.actions:

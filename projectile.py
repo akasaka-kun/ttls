@@ -8,7 +8,7 @@ import GLOBAL
 import config
 
 
-class projectile(abc.ABC, pygame.sprite.Sprite):
+class Projectile(abc.ABC, pygame.sprite.Sprite):
     """please implement ALL class attributes in your subclasses"""
     surface: pygame.Surface
     collider: Tuple[str, ...]
@@ -17,7 +17,10 @@ class projectile(abc.ABC, pygame.sprite.Sprite):
         super().__init__()
         self.pos = pos
         self.size = [10, 10] if size is None else size
-        self.rect = pygame.Rect(*self.pos, *self.size)
+
+    @property
+    def rect(self):
+        return pygame.Rect(*self.pos, *self.size)
 
     @staticmethod
     def on_collision():  # for most cases you can leave this as is
@@ -42,7 +45,7 @@ class Danmaku(pygame.sprite.Group):
     def update(self, dt):
         super().update(dt)
 
-    def add(self, *sprites: projectile) -> None:
+    def add(self, *sprites: Projectile) -> None:
         super().add(*sprites)
 
     @staticmethod
