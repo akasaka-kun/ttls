@@ -35,6 +35,7 @@ class Player(Renderable):
 
     ANIMATION_FRAME_DURATION = 8
     ANIMATION_STATES = {
+        frozenset(("idle",)): ("idle", 0),
         frozenset(("moveUp",)): ("moveUp", 1),
         frozenset(("moveDown",)): ("moveDown", 1),
         frozenset(("moveLeft",)): ("moveLeft", 1),
@@ -59,7 +60,7 @@ class Player(Renderable):
         self.y = 800
 
         self.danmaku = projectile.Danmaku(self.faction)
-        self.bulletCD = 0
+        self.bullet_CD_Timer = 0
 
         self.width, self.height = 40, 40
         S = pygame.Surface((self.width / 2, self.height / 2)).convert_alpha()
@@ -68,8 +69,8 @@ class Player(Renderable):
 
         self.animation_state = ("", 1)
         self.texture_atlas = Atlas('textures/character.png', (22, 20),
-                                   [i + str(j) for j in range(5) for i in ["moveRight", "moveDown", "moveLeft", "moveUp", "moveUpRight", "moveDownRight", "moveDownLeft", "moveUpLeft", "Focus"]],
-                                   [(0, 0, -1, 0)] * 9 * 5)
+                                   [i + str(j) for j in range(5) for i in ["moveRight", "moveDown", "moveLeft", "moveUp", "moveUpRight", "moveDownRight", "moveDownLeft", "moveUpLeft", "Focus", "idle"]],
+                                   [(0, 0, -1, 0)] * 10 * 5)
         self._actions = []
 
     @property
@@ -87,12 +88,13 @@ class Player(Renderable):
                     current = s[0], prio
         self.animation_state = current[0], 0 if current[0] != self.animation_state[0] else (self.animation_state[1] + 1)
         print(self.animation_state)
-        return pygame.transform.scale2x(self.texture_atlas.get(current[0] + str(self.animation_state[1] // Player.ANIMATION_FRAME_DURATION % 5), self.default_surface))
+        frame_number = str(self.animation_state[1] // Player.ANIMATION_FRAME_DURATION % 5)
+        return pygame.transform.scale2x(self.texture_atlas.get(current[0] + frame_number, self.texture_atlas.get("idle" + frame_number, self.default_surface)))
 
     def update(self, dt):
         self._actions = []
         self.v.fill(0)
-        self.bulletCD = max(0, self.bulletCD - dt)
+        self.bullet_CD_Timer = max(0, self.bullet_CD_Timer - dt)
         for a in self.controller.actions:
             match a:
 
@@ -112,26 +114,26 @@ class Player(Renderable):
 
                 # shoot
                 case "shootUp":
-                    if self.bulletCD == 0:
-                        self.bulletCD = Player.BULLET_DELAY
+                    if self.bullet_CD_Timer == 0:
+                        self.bullet_CD_Timer = Player.BULLET_DELAY
                         self.danmaku.add(test_bullet(self.pos + [self.width / 2 - 6, self.height], direction=1.5 * math.pi))
                         self.danmaku.add(test_bullet(self.pos + [self.width / 2 + 6, self.height], direction=1.5 * math.pi))
 
                 case "shootDown":
-                    if self.bulletCD == 0:
-                        self.bulletCD = Player.BULLET_DELAY
+                    if self.bullet_CD_Timer == 0:
+                        self.bullet_CD_Timer = Player.BULLET_DELAY
                         self.danmaku.add(test_bullet(self.pos + [self.width / 2 - 6, 0], direction=.5 * math.pi))
                         self.danmaku.add(test_bullet(self.pos + [self.width / 2 + 6, 0], direction=.5 * math.pi))
 
                 case "shootLeft":
-                    if self.bulletCD == 0:
-                        self.bulletCD = Player.BULLET_DELAY
+                    if self.bullet_CD_Timer == 0:
+                        self.bullet_CD_Timer = Player.BULLET_DELAY
                         self.danmaku.add(test_bullet(self.pos + [self.width, self.height / 2 - 6], direction=math.pi))
                         self.danmaku.add(test_bullet(self.pos + [self.width, self.height / 2 + 6], direction=math.pi))
 
                 case "shootRight":
-                    if self.bulletCD == 0:
-                        self.bulletCD = Player.BULLET_DELAY
+                    if self.bullet_CD_Timer == 0:
+                        self.bullet_CD_Timer = Player.BULLET_DELAY
                         self.danmaku.add(test_bullet(self.pos + [0, self.height / 2 - 6], direction=0))
                         self.danmaku.add(test_bullet(self.pos + [0, self.height / 2 + 6], direction=0))
 
