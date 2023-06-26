@@ -1,5 +1,5 @@
 from typing import Dict, List
-from enemies import TestEnemy
+from enemyData import TestEnemy
 
 
 class LEvent:
@@ -31,18 +31,17 @@ class Level:
             self.events.pop(k)
 
 
-# todo change levels system to allow multiple simultaneous events
 Default = Level({
-    1: [LEvent(TestEnemy.spawn, [(200, 100)]), LEvent(TestEnemy.spawn, [(200, 100), "right"])],
-    1.3: [LEvent(TestEnemy.spawn, [(400, 100)]), LEvent(TestEnemy.spawn, [(400, 100), "right"])],
-    1.6: [LEvent(TestEnemy.spawn, [(600, 100)]), LEvent(TestEnemy.spawn, [(600, 100), "right"])],
-    1.9: [LEvent(TestEnemy.spawn, [(800, 100)]), LEvent(TestEnemy.spawn, [(800, 100), "right"])],
-    3: [LEvent(TestEnemy.spawn, [(200, 100)]), LEvent(TestEnemy.spawn, [(200, 100), "right"])],
-    3.3: [LEvent(TestEnemy.spawn, [(400, 100)]), LEvent(TestEnemy.spawn, [(400, 100), "right"])],
-    3.6: [LEvent(TestEnemy.spawn, [(600, 100)]), LEvent(TestEnemy.spawn, [(600, 100), "right"])],
-    3.9: [LEvent(TestEnemy.spawn, [(800, 100)]), LEvent(TestEnemy.spawn, [(800, 100), "right"])],
-    5: [LEvent(TestEnemy.spawn, [(200, 100)]), LEvent(TestEnemy.spawn, [(200, 100), "right"])],
-    5.3: [LEvent(TestEnemy.spawn, [(400, 100)]), LEvent(TestEnemy.spawn, [(400, 100), "right"])],
-    5.6: [LEvent(TestEnemy.spawn, [(600, 100)]), LEvent(TestEnemy.spawn, [(600, 100), "right"])],
-    5.9: [LEvent(TestEnemy.spawn, [(800, 100)]), LEvent(TestEnemy.spawn, [(800, 100), "right"])],
+    1: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    1.3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    1.6: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    1.9: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    3.3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    3.6: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    3.9: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    5: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    5.3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    5.6: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    5.9: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
 })
