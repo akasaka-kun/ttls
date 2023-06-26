@@ -61,7 +61,7 @@ class Player(Renderable):
 
         self.danmaku = projectile.Danmaku(self.faction)
         self.bullet_CD_Timer = 0
-        self.collider = collider_sprite(5)
+        self.collider = collider_sprite(2)
 
         self.width, self.height = 40, 40
         S = pygame.Surface((self.width / 2, self.height / 2)).convert_alpha()
@@ -94,13 +94,13 @@ class Player(Renderable):
     def update(self, dt):
         self._actions = []
 
-        self.collider.rect = pygame.Rect(self.pos, [self.collider.size] * 2)
+        self.collider.rect = pygame.Rect(self.pos + (numpy.asarray([self.width, self.height]) // 2), [self.collider.size] * 2)
 
         for i in GLOBAL.PROJECTILE_GROUPS:
             if i.faction != self.faction:
                 collisions = pygame.sprite.spritecollide(self.collider, i, True, pygame.sprite.collide_circle)
                 if collisions:
-                    print("deht")
+                    raise Exception("Died")
 
         self.v.fill(0)
         self.bullet_CD_Timer = max(0, self.bullet_CD_Timer - dt)
