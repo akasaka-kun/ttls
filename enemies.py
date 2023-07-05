@@ -63,7 +63,6 @@ class Enemy:
         if self.health <= 0:  # later : play death animations, drop stuff, this kinda shit
             self.kill()
 
-        # behaviour todo issue in there
         if self.current_action is None:
             try:
                 self.current_action = next(self.behavior_)
