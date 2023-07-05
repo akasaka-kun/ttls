@@ -28,7 +28,7 @@ while True:
     for K in Keyboard.instances:
         K.update()
 
-    dt = clk.tick(60) / 1000  # todo maybe independent tick rate
+    dt = clk.tick(60) / 1000 * GLOBAL.TIME_FACTOR  # todo maybe independent tick rate
     time += dt
 
     levels.Default.proc_events(time)

@@ -8,6 +8,7 @@ keyboard_controls = {
     pygame.K_s: "down",
     pygame.K_d: "right",
     pygame.K_LSHIFT: "focus",
+    pygame.K_LCTRL: "spirits",
     pygame.K_UP: "shootUp",
     pygame.K_DOWN: "shootDown",
     pygame.K_LEFT: "shootLeft",

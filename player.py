@@ -2,7 +2,9 @@ import math
 
 import numpy
 import pygame
+from pygame import gfxdraw
 
+import misc
 import projectile
 from misc import bind
 from config import bound_rect
@@ -11,6 +13,7 @@ import GLOBAL
 from render import Renderable
 from textures.atlas import Atlas
 from collision import collider_sprite
+from vfx import Vfx
 
 
 class test_bullet(projectile.Projectile):
@@ -48,31 +51,45 @@ class Player(Renderable):
         frozenset(("focus",)): ("Focus", 10)
     }
 
-    def __init__(self, controller):
-        GLOBAL.TO_RENDER.append(self)
-        GLOBAL.TO_UPDATE.append(self)
-        GLOBAL.PLAYER = self
-        self.controller = controller
-        self.faction = "player"
+    SPIRIT_WHEEL_TIME_LIMIT = 2
+    SPIRIT_SELECTION_BREAK_COOLDOWN = 10
+    SPIRIT_SELECTION_COOLDOWN = 3
+    SPIRIT_SLOWDOWN_FACTOR = .3
+    SPIRIT_GRADING = [.25, .66]
 
+    def __init__(self, controller):
+        self.controller = controller
+
+        # movement stuff
         self.v = numpy.zeros(2, dtype=float)
         self.x = 500
         self.y = 800
 
+        # collision with bullets stuff
+        self.faction = "player"
         self.danmaku = projectile.Danmaku(self.faction)
         self.bullet_CD_Timer = 0
         self.collider = collider_sprite(2)
 
+        # animation stuff
         self.width, self.height = 40, 40
-        S = pygame.Surface((self.width / 2, self.height / 2)).convert_alpha()
-        S.fill((255, 0, 0, 255))
-        self.default_surface = S
-
+        self.default_surface = [(S := pygame.Surface((self.width / 2, self.height / 2))).convert_alpha(), S.fill((255, 0, 0, 255)), S][-1]
         self.animation_state = ("", 1)
         self.texture_atlas = Atlas('textures/character.png', (22, 20),
                                    [i + str(j) for j in range(5) for i in ["moveRight", "moveDown", "moveLeft", "moveUp", "moveUpRight", "moveDownRight", "moveDownLeft", "moveUpLeft", "Focus", "idle"]],
                                    [(0, 0, -1, 0)] * 10 * 5)
         self._actions = []
+
+        # spirit selection stuff
+        self.spirit_wheel_time = 0
+        self.spirit_selection_cooldown = 0
+        self.spirit_selection_total_cooldown = 0
+        self.spirit_wheel_effect = Vfx(self.spirit_wheel_surface)
+
+        # global
+        GLOBAL.TO_RENDER.extend([self, self.spirit_wheel_effect])
+        GLOBAL.TO_UPDATE.extend([self, self.spirit_wheel_effect])
+        GLOBAL.PLAYER = self
 
     @property
     def pos(self):
@@ -80,7 +97,6 @@ class Player(Renderable):
 
     @property
     def surface(self):
-
         current = ("idle", 0)
         for c, s in Player.ANIMATION_STATES.items():
             if all(i in self._actions for i in c):
@@ -89,7 +105,31 @@ class Player(Renderable):
                     current = s[0], prio
         self.animation_state = current[0], 0 if current[0] != self.animation_state[0] else (self.animation_state[1] + 1)
         frame_number = str(self.animation_state[1] // Player.ANIMATION_FRAME_DURATION % 5)
-        return pygame.transform.scale2x(self.texture_atlas.get(current[0] + frame_number, self.texture_atlas.get("idle" + frame_number, self.default_surface)))
+        return pygame.transform.scale2x(self.texture_atlas.get(current[0] + frame_number, self.default_surface))
+
+    def spirit_wheel_surface(self):
+        surf = pygame.Surface((self.width, self.height)).convert_alpha()
+        surf.fill((0, 0, 0, 0))
+        res = surf.copy()
+        rect = pygame.Rect(self.pos, [self.height, self.width])
+
+        if self.spirit_selection_cooldown != 0:
+            angle = self.spirit_selection_cooldown / self.spirit_selection_total_cooldown * 360
+            misc.arc(res, (255, 0, 255), surf.get_rect().center, surf.get_rect().width // 2, 0, angle, 3)
+        if self.spirit_wheel_time > 0:
+            time_factor = self.spirit_wheel_time / self.SPIRIT_WHEEL_TIME_LIMIT
+            grading_angles = list(map(lambda x: x * 360 - 90, self.SPIRIT_GRADING))
+            grading_mask = surf.copy()
+            misc.arc(grading_mask, (000, 255, 000), surf.get_rect().center, surf.get_rect().width // 2, -90, grading_angles[0], 3)
+            misc.arc(grading_mask, (255, 165, 000), surf.get_rect().center, surf.get_rect().width // 2, grading_angles[0], grading_angles[1], 3)
+            misc.arc(grading_mask, (255, 000, 000), surf.get_rect().center, surf.get_rect().width // 2, grading_angles[1], 270, 3)
+
+            spirit_wheel_timer = surf.copy()
+            misc.arc(spirit_wheel_timer, (255, 255, 255), surf.get_rect().center, surf.get_rect().width // 2, -90, time_factor * 360 - 90, 3)
+            spirit_wheel_timer.blit(grading_mask, [0, 0], special_flags=pygame.BLEND_MULT)
+            res.blit(spirit_wheel_timer, [0, 0])
+
+        return res, rect
 
     def update(self, dt):
         self._actions = []
@@ -104,7 +144,25 @@ class Player(Renderable):
 
         self.v.fill(0)
         self.bullet_CD_Timer = max(0, self.bullet_CD_Timer - dt)
+
+        if self.spirit_selection_cooldown != 0:
+            self.spirit_selection_cooldown = max(self.spirit_selection_cooldown - dt, 0)
+        if "spirits" in self.controller.actions and self.spirit_selection_cooldown == 0:
+            self.spirit_wheel_time += dt / self.SPIRIT_SLOWDOWN_FACTOR
+            GLOBAL.TIME_FACTOR = self.SPIRIT_SLOWDOWN_FACTOR
+            if self.spirit_wheel_time >= self.SPIRIT_WHEEL_TIME_LIMIT:
+                GLOBAL.TIME_FACTOR = 1
+                self.spirit_wheel_time = 0
+                self.spirit_selection_cooldown = self.spirit_selection_total_cooldown = self.SPIRIT_SELECTION_BREAK_COOLDOWN
+                print("broke spirit")
+        elif self.spirit_wheel_time != 0 and self.spirit_selection_cooldown == 0:
+            print("chose spirit")
+            GLOBAL.TIME_FACTOR = 1
+            self.spirit_wheel_time = 0
+            self.spirit_selection_cooldown = self.spirit_selection_total_cooldown = self.SPIRIT_SELECTION_COOLDOWN
+
         for a in self.controller.actions:
+
             match a:
 
                 # move
@@ -125,26 +183,26 @@ class Player(Renderable):
                 case "shootUp":
                     if self.bullet_CD_Timer == 0:
                         self.bullet_CD_Timer = Player.BULLET_DELAY
-                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 - 6, self.height], direction=1.5 * math.pi))
-                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 + 6, self.height], direction=1.5 * math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 - 6, self.height * .25], direction=1.5 * math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 + 6, self.height * .25], direction=1.5 * math.pi))
 
                 case "shootDown":
                     if self.bullet_CD_Timer == 0:
                         self.bullet_CD_Timer = Player.BULLET_DELAY
-                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 - 6, 0], direction=.5 * math.pi))
-                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 + 6, 0], direction=.5 * math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 - 6, self.height * .75], direction=.5 * math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width / 2 + 6, self.height * .75], direction=.5 * math.pi))
 
                 case "shootLeft":
                     if self.bullet_CD_Timer == 0:
                         self.bullet_CD_Timer = Player.BULLET_DELAY
-                        self.danmaku.add(test_bullet(self.pos + [self.width, self.height / 2 - 6], direction=math.pi))
-                        self.danmaku.add(test_bullet(self.pos + [self.width, self.height / 2 + 6], direction=math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width * .25, self.height / 2 - 6], direction=math.pi))
+                        self.danmaku.add(test_bullet(self.pos + [self.width * .25, self.height / 2 + 6], direction=math.pi))
 
                 case "shootRight":
                     if self.bullet_CD_Timer == 0:
                         self.bullet_CD_Timer = Player.BULLET_DELAY
-                        self.danmaku.add(test_bullet(self.pos + [0, self.height / 2 - 6], direction=0))
-                        self.danmaku.add(test_bullet(self.pos + [0, self.height / 2 + 6], direction=0))
+                        self.danmaku.add(test_bullet(self.pos + [self.width * .75, self.height / 2 - 6], direction=0))
+                        self.danmaku.add(test_bullet(self.pos + [self.width * .75, self.height / 2 + 6], direction=0))
 
         if "focus" in self.controller.actions:
             self.v /= 2.5
