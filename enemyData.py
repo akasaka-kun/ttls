@@ -53,37 +53,19 @@ class TestEnemy(Enemy):
         self.behavior_ = self.behavior(*preset)
 
         self.collider = collider_sprite(20)
-        self.current_action = None
 
     def update(self, dt: float):
         super(TestEnemy, self).update(dt)
         self.collider.rect = pygame.Rect(self.x, self.y, self.collider.size, self.collider.size)
-        if self.current_action is None or self.current_action[1] == 0:
-            try:
-                self.current_action = list(next(self.behavior_))
-                if isinstance(self.current_action[0], Generator): next(self.current_action[0])
-            except StopIteration:
-                self.kill()
-                return
-        action = self.current_action[0]
-        action_time: float = min(dt, self.current_action[1])
-        if isinstance(action, Generator):
-            action.send(action_time)
-        elif isinstance(action, Callable):
-            action(action_time)
-        self.current_action[1] -= action_time
 
     def behavior(self, animation_side, V, path_in, path_out):
 
         self.animation_state = animation_side
-        yield self.path(path_in, 1), 1
+        yield self.path(path_in, duration=1)
         self.danmaku.add(self.test_bullet(self.collider.rect.center))
 
-        for i in range(3):
-            self.animation_state = animation_side
-            yield (lambda dt: self.move([V * dt, 0])), 1
-            self.danmaku.add(self.test_bullet(self.collider.rect.center))
+        yield self.move([V, 0], duration=3)
+        self.danmaku.add(self.test_bullet(self.collider.rect.center))
 
-        self.animation_state = animation_side
-        yield self.path(path_out, 1), 1
+        yield self.path(path_out, duration=1)
         self.danmaku.add(self.test_bullet(self.collider.rect.center))
