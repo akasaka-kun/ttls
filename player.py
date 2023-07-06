@@ -133,6 +133,7 @@ class Player(Renderable):
 
     def update(self, dt):
         self._actions = []
+        reset_v = True
 
         self.collider.rect = pygame.Rect(self.pos + (numpy.asarray([self.width, self.height]) // 2), [self.collider.size] * 2)
 
@@ -142,24 +143,30 @@ class Player(Renderable):
                 if collisions:
                     raise Exception("Died")
 
-        self.v.fill(0)
-        self.bullet_CD_Timer = max(0, self.bullet_CD_Timer - dt)
-
         if self.spirit_selection_cooldown != 0:
             self.spirit_selection_cooldown = max(self.spirit_selection_cooldown - dt, 0)
+
         if "spirits" in self.controller.actions and self.spirit_selection_cooldown == 0:
             self.spirit_wheel_time += dt / self.SPIRIT_SLOWDOWN_FACTOR
             GLOBAL.TIME_FACTOR = self.SPIRIT_SLOWDOWN_FACTOR
+
+            reset_v = False
+            [self.controller.actions.pop(i) for i in ("up", "left", "right", "down") if i in self.controller.actions]
+
             if self.spirit_wheel_time >= self.SPIRIT_WHEEL_TIME_LIMIT:
                 GLOBAL.TIME_FACTOR = 1
                 self.spirit_wheel_time = 0
                 self.spirit_selection_cooldown = self.spirit_selection_total_cooldown = self.SPIRIT_SELECTION_BREAK_COOLDOWN
                 print("broke spirit")
+
         elif self.spirit_wheel_time != 0 and self.spirit_selection_cooldown == 0:
             print("chose spirit")
             GLOBAL.TIME_FACTOR = 1
             self.spirit_wheel_time = 0
             self.spirit_selection_cooldown = self.spirit_selection_total_cooldown = self.SPIRIT_SELECTION_COOLDOWN
+
+        if reset_v: self.v.fill(0)
+        self.bullet_CD_Timer = max(0, self.bullet_CD_Timer - dt)
 
         for a in self.controller.actions:
 
