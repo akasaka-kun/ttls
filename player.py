@@ -1,6 +1,7 @@
 import math
 
 import numpy
+import numpy as np
 import pygame
 from pygame import gfxdraw
 
@@ -54,6 +55,7 @@ class Player(Renderable):
     SPIRIT_WHEEL_TIME_LIMIT = 2
     SPIRIT_SELECTION_BREAK_COOLDOWN = 10
     SPIRIT_SELECTION_COOLDOWN = 3
+    SPIRIT_SELECTION_COYOTE_TIME = 3
     SPIRIT_SLOWDOWN_FACTOR = .3
     SPIRIT_GRADING = [.25, .66]
 
@@ -86,6 +88,13 @@ class Player(Renderable):
         self.spirit_selection_total_cooldown = 0
         self.spirit_wheel_effect = Vfx(self.spirit_wheel_surface)
 
+        self.spirit_wheel_slice = pygame.image.load("textures/spirit selection slice.png")
+        self.spirit_wheel_slice = pygame.transform.scale(pygame.image.load("textures/spirit selection slice.png"), np.array(self.spirit_wheel_slice.get_size()) * 0.16)
+
+        self.selecting_spirit = ""
+        self.spirit_selection_coyote_time = self.SPIRIT_SELECTION_COYOTE_TIME
+        self.spirit = ""
+
         # global
         GLOBAL.TO_RENDER.extend([self, self.spirit_wheel_effect])
         GLOBAL.TO_UPDATE.extend([self, self.spirit_wheel_effect])
@@ -97,37 +106,43 @@ class Player(Renderable):
 
     @property
     def surface(self):
-        current = ("idle", 0)
-        for c, s in Player.ANIMATION_STATES.items():
-            if all(i in self._actions for i in c):
-                prio = s[1] + sum(n for n, a in enumerate(self._actions) if a in c)
-                if current[1] < prio:
-                    current = s[0], prio
+        current = self._state_to_animation_state(self._actions)
         self.animation_state = current[0], 0 if current[0] != self.animation_state[0] else (self.animation_state[1] + 1)
         frame_number = str(self.animation_state[1] // Player.ANIMATION_FRAME_DURATION % 5)
         return pygame.transform.scale2x(self.texture_atlas.get(current[0] + frame_number, self.default_surface))
 
+    @staticmethod
+    def _state_to_animation_state(states):
+        current = ("idle", 0)
+        for c, s in Player.ANIMATION_STATES.items():
+            if all(i in states for i in c):
+                prio = s[1] + sum(n for n, a in enumerate(states) if a in c)
+                if current[1] < prio:
+                    current = s[0], prio
+        return current
+
     def spirit_wheel_surface(self):
-        surf = pygame.Surface((self.width, self.height)).convert_alpha()
+        if self.spirit_wheel_time == 0 and self.spirit_selection_cooldown == 0:
+            return pygame.Surface((0, 0)), pygame.Rect([0, 0, 0, 0])
+
+        offset = numpy.array([25, 25])
+        rect = pygame.Rect(self.pos - offset, [self.width, self.height] + offset * 2)
+        surf = pygame.Surface(rect.size).convert_alpha()
         surf.fill((0, 0, 0, 0))
         res = surf.copy()
-        rect = pygame.Rect(self.pos, [self.height, self.width])
+
+        player_rect = self.surface.get_rect()
 
         if self.spirit_selection_cooldown != 0:
-            angle = self.spirit_selection_cooldown / self.spirit_selection_total_cooldown * 360
-            misc.arc(res, (255, 0, 255), surf.get_rect().center, surf.get_rect().width // 2, 0, angle, 3)
-        if self.spirit_wheel_time > 0:
-            time_factor = self.spirit_wheel_time / self.SPIRIT_WHEEL_TIME_LIMIT
-            grading_angles = list(map(lambda x: x * 360 - 90, self.SPIRIT_GRADING))
-            grading_mask = surf.copy()
-            misc.arc(grading_mask, (000, 255, 000), surf.get_rect().center, surf.get_rect().width // 2, -90, grading_angles[0], 3)
-            misc.arc(grading_mask, (255, 165, 000), surf.get_rect().center, surf.get_rect().width // 2, grading_angles[0], grading_angles[1], 3)
-            misc.arc(grading_mask, (255, 000, 000), surf.get_rect().center, surf.get_rect().width // 2, grading_angles[1], 270, 3)
+            misc.arc(res, (200, 0, 0), res.get_rect().center, 25, -90, -90 + (self.spirit_selection_cooldown / self.spirit_selection_total_cooldown) * 360, 3)
+            return res, rect
 
-            spirit_wheel_timer = surf.copy()
-            misc.arc(spirit_wheel_timer, (255, 255, 255), surf.get_rect().center, surf.get_rect().width // 2, -90, time_factor * 360 - 90, 3)
-            spirit_wheel_timer.blit(grading_mask, [0, 0], special_flags=pygame.BLEND_MULT)
-            res.blit(spirit_wheel_timer, [0, 0])
+        directionToSlice = {"spiritSelectUp": 3, "spiritSelectUpRight": 2, "spiritSelectDownRight": 1, "spiritSelectDown": 0, "spiritSelectDownLeft": 5, "spiritSelectUpLeft": 4}
+        for i in range(6):
+            rotated = pygame.transform.rotate(self.spirit_wheel_slice, 60 * (i + 3))
+            print(self.selecting_spirit, directionToSlice[self.selecting_spirit])
+            if directionToSlice[self.selecting_spirit] == i: rotated = pygame.transform.scale(rotated, np.array(rotated.get_size()) * 1.4)
+            res.blit(rotated, res.get_rect().center + np.multiply((math.sin(i / 3 * math.pi), math.cos(i / 3 * math.pi)), [30, 30]) + [0, 0] - np.divide(rotated.get_size(), 2))
 
         return res, rect
 
@@ -145,25 +160,6 @@ class Player(Renderable):
 
         if self.spirit_selection_cooldown != 0:
             self.spirit_selection_cooldown = max(self.spirit_selection_cooldown - dt, 0)
-
-        if "spirits" in self.controller.actions and self.spirit_selection_cooldown == 0:
-            self.spirit_wheel_time += dt / self.SPIRIT_SLOWDOWN_FACTOR
-            GLOBAL.TIME_FACTOR = self.SPIRIT_SLOWDOWN_FACTOR
-
-            reset_v = False
-            [self.controller.actions.pop(i) for i in ("up", "left", "right", "down") if i in self.controller.actions]
-
-            if self.spirit_wheel_time >= self.SPIRIT_WHEEL_TIME_LIMIT:
-                GLOBAL.TIME_FACTOR = 1
-                self.spirit_wheel_time = 0
-                self.spirit_selection_cooldown = self.spirit_selection_total_cooldown = self.SPIRIT_SELECTION_BREAK_COOLDOWN
-                print("broke spirit")
-
-        elif self.spirit_wheel_time != 0 and self.spirit_selection_cooldown == 0:
-            print("chose spirit")
-            GLOBAL.TIME_FACTOR = 1
-            self.spirit_wheel_time = 0
-            self.spirit_selection_cooldown = self.spirit_selection_total_cooldown = self.SPIRIT_SELECTION_COOLDOWN
 
         if reset_v: self.v.fill(0)
         self.bullet_CD_Timer = max(0, self.bullet_CD_Timer - dt)
@@ -210,6 +206,46 @@ class Player(Renderable):
                         self.bullet_CD_Timer = Player.BULLET_DELAY
                         self.danmaku.add(test_bullet(self.pos + [self.width * .75, self.height / 2 - 6], direction=0))
                         self.danmaku.add(test_bullet(self.pos + [self.width * .75, self.height / 2 + 6], direction=0))
+
+                case "spirits":
+
+                    if self.spirit_selection_cooldown == 0:
+                        self.spirit_wheel_time += dt / self.SPIRIT_SLOWDOWN_FACTOR
+                        GLOBAL.TIME_FACTOR = self.SPIRIT_SLOWDOWN_FACTOR
+
+                        if self.spirit_wheel_time >= self.SPIRIT_WHEEL_TIME_LIMIT:
+                            self.spirit = ""
+                            GLOBAL.TIME_FACTOR = 1
+                            self.spirit_wheel_time = 0
+                            self.spirit_selection_cooldown = self.spirit_selection_total_cooldown = self.SPIRIT_SELECTION_BREAK_COOLDOWN
+                            print("broke spirit")
+                    else:
+                        continue
+
+                    for direction in self.controller.actions:
+                        if direction not in ["up", "left", "down", "right"]:
+                            continue
+                        print(direction)
+                        match direction:
+                            case "left" if "up" in self.controller.actions:
+                                self.selecting_spirit = "spiritSelectUpLeft"
+                            case "right" if "up" in self.controller.actions:
+                                self.selecting_spirit = "spiritSelectUpRight"
+                            case "left" if "down" in self.controller.actions:
+                                self.selecting_spirit = "spiritSelectDownLeft"
+                            case "right" if "down" in self.controller.actions:
+                                self.selecting_spirit = "spiritSelectDownRight"
+                            case "up" if not any(i in self.controller.actions for i in ["left", "right"]):
+                                self.selecting_spirit = "spiritSelectUp"
+                            case "down" if not any(i in self.controller.actions for i in ["left", "right"]):
+                                self.selecting_spirit = "spiritSelectDown"
+
+            if self.spirit_wheel_time != 0 and self.spirit_selection_cooldown == 0 and "spirits" not in self.controller.actions:
+                print("chose spirit")
+                self.spirit = self.selecting_spirit
+                GLOBAL.TIME_FACTOR = 1
+                self.spirit_wheel_time = 0
+                self.spirit_selection_cooldown = self.spirit_selection_total_cooldown = self.SPIRIT_SELECTION_COOLDOWN
 
         if "focus" in self.controller.actions:
             self.v /= 2.5
