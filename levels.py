@@ -12,6 +12,15 @@ class LEvent:
         return self.function(*self.args)
 
 
+class EventGroup:
+    def __init__(self, events):
+        self.events = events
+
+    def proc(self):
+        for e in self.events:
+            e.proc()
+
+
 class Level:
 
     def __init__(self, events: Dict[float, List[LEvent] | LEvent]):
@@ -31,17 +40,20 @@ class Level:
             self.events.pop(k)
 
 
+from EventGroupData import TestEnemySpawner
+
 Default = Level({
-    1: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    1.3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    1.6: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    1.9: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    3.3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    3.6: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    3.9: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    5: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    5.3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    5.6: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
-    5.9: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), TestEnemy.Preset.right])],
+    1: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    1.3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    1.6: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    1.9: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    3.3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    3.6: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    3.9: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    5: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    5.3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    5.6: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    5.9: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    7: TestEnemySpawner([500, 0], 40, 12)
 })

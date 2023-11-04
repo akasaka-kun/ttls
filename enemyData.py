@@ -15,10 +15,6 @@ from textures.atlas import Atlas
 class TestEnemy(Enemy):
     danmaku = Danmaku("enemy")
 
-    class Preset:
-        left = ["moveLeft", -150, [Curve.Point(1000, 0), Curve.Point(850, 200), Curve.Point(700, 200)], [Curve.Point(250, 200), Curve.Point(0, 200), Curve.Point(0, 300)]]
-        right = ["moveRight", 150, [Curve.Point(0, 0), Curve.Point(150, 200), Curve.Point(300, 200)], [Curve.Point(750, 200), Curve.Point(1000, 200), Curve.Point(1000, 300)]]
-
     class test_bullet(Projectile):
         SPEED = 200
         IMAGE = pygame.Surface((10, 10))
@@ -40,16 +36,28 @@ class TestEnemy(Enemy):
 
     def __init__(self, pos, preset=None):
         super().__init__(pos)
+
+        class Preset:
+            left = ["moveLeft", -150, [Curve.Point(1000, 0), Curve.Point(850, 200), Curve.Point(700, 200)], [Curve.Point(250, 200), Curve.Point(0, 200), Curve.Point(0, 300)]]
+            right = ["moveRight", 150, [Curve.Point(0, 0), Curve.Point(150, 200), Curve.Point(300, 200)], [Curve.Point(750, 200), Curve.Point(1000, 200), Curve.Point(1000, 300)]]
+            ease_down = [Curve.Point(pos[0], 0), Curve.Point(pos[0], 250), Curve.Point(pos[0], 350)]
+            forward = ["U-turn", 0, ease_down, ease_down[::-1]]
+
+        self.Preset = Preset
+
         self.texture_atlas = Atlas('textures/TestEnemy.png', (22, 20),
-                                   [i + str(j) for j in range(5) for i in ["moveRight", "moveLeft"]],
-                                   [(0, 0, -1, 0)] * 2 * 5)
+                                   [i + str(j) for j in range(5) for i in ["moveRight", "moveLeft", "U-turn"]],
+                                   [(0, 0, -1, 0)] * 3 * 5)
         self.animation_state = ""
         self.animation_frame_duration = 0.2
         self.animation_frame_count = 5
 
         self.health = 30
 
-        if preset is None: preset = self.Preset.left
+        if preset is None:
+            preset = self.Preset.left
+        else:
+            preset = getattr(self.Preset, preset)
         self.behavior_ = self.behavior(*preset)
 
         self.collider = collider_sprite(20)
@@ -64,8 +72,9 @@ class TestEnemy(Enemy):
         yield self.path(path_in, duration=1)
         self.danmaku.add(self.test_bullet(self.collider.rect.center))
 
-        yield self.move([V, 0], duration=3)
-        self.danmaku.add(self.test_bullet(self.collider.rect.center))
+        for i in range(3):
+            yield self.move([V, 0], duration=1)
+            self.danmaku.add(self.test_bullet(self.collider.rect.center))
 
         yield self.path(path_out, duration=1)
         self.danmaku.add(self.test_bullet(self.collider.rect.center))
