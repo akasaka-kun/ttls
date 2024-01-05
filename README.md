@@ -1,3 +1,4 @@
+# ⚠ THIS IS A FORK
 # TouhouTheLostSpirits
 A Touhou fan game
 
