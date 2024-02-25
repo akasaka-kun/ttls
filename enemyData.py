@@ -6,6 +6,7 @@ import pygame
 import beziers.cubicbezier as Curve
 
 import GLOBAL
+import config
 from collision import collider_sprite
 from enemies import Enemy
 from projectile import Projectile, Danmaku
@@ -126,7 +127,7 @@ class Yukari(Enemy):
             preset = self.Preset.left
         else:
             preset = getattr(self.Preset, preset)
-        self.behavior_ = self.behavior(*preset)
+        self.behavior_ = self.behavior()
 
         self.collider = collider_sprite(20)
 
@@ -134,15 +135,13 @@ class Yukari(Enemy):
         super(self.__class__, self).update(dt)
         self.collider.rect = pygame.Rect(self.x, self.y, self.collider.size, self.collider.size)
 
-    def behavior(self, animation_side, V, path_in, path_out):
+    def behavior(self):
 
-        self.animation_state = animation_side
-        yield self.path(path_in, duration=1)
-        self.danmaku.add(self.test_bullet(self.collider.rect.center))
-
-        for i in range(3):
-            yield self.move([V, 0], duration=1)
-            self.danmaku.add(self.test_bullet(self.collider.rect.center))
-
-        yield self.path(path_out, duration=1)
-        self.danmaku.add(self.test_bullet(self.collider.rect.center))
+        # pattern 1
+        center = GLOBAL.PLAYER.collider.rect.center - numpy.asarray(self.collider.size) // 2
+        size = min(900 - center[0], 900 - center[1]) + 100
+        self.animation_state = "U-turn"
+        yield self.path([Curve.Point(center[0], center[1] - size), Curve.Point(center[0] + size * 0.2, center[1] - size * 0.8), Curve.Point(center[0] + size * 0.8, center[1] - size * 0.2), Curve.Point(center[0] + size, center[1])], duration=1)
+        yield self.path([Curve.Point(center[0] + size, center[1]), Curve.Point(center[0] + size * 0.8, center[1] + size * 0.2), Curve.Point(center[0] + size * 0.2, center[1] + size * 0.8), Curve.Point(center[0], center[1] + size)], duration=1)
+        yield self.path([Curve.Point(center[0], center[1] + size), Curve.Point(center[0] - size * 0.2, center[1] + size * 0.8), Curve.Point(center[0] - size * 0.8, center[1] + size * 0.2), Curve.Point(center[0] - size, center[1])], duration=1)
+        yield self.path([Curve.Point(center[0] - size, center[1]), Curve.Point(center[0] - size * 0.8, center[1] - size * 0.2), Curve.Point(center[0] - size * 0.2, center[1] - size * 0.8), Curve.Point(center[0], center[1] - size)], duration=1)

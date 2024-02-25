@@ -91,7 +91,12 @@ class Enemy:
 
     @action_repeat
     def path(self, curvePoints, time: float = None, **kwargs):
-        curve = Curve.QuadraticBezier(*curvePoints)
+        if len(curvePoints) == 3:
+            curve = Curve.QuadraticBezier(*curvePoints)
+        elif len(curvePoints) == 4:
+            curve = Curve.CubicBezier(*curvePoints)
+        else:
+            raise ValueError(f"path has invalid amount of points : {len(curvePoints)}")
         pat = curve.pointAtTime(time).rounded()
         self.x, self.y = pat.x, pat.y
 

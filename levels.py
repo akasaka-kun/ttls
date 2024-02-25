@@ -1,5 +1,5 @@
 from typing import Dict, List
-from enemyData import TestEnemy
+from enemyData import TestEnemy, Yukari
 
 
 class LEvent:
@@ -43,7 +43,7 @@ class Level:
 from EventGroupData import TestEnemySpawner
 
 Default = Level({
-    1: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
+    1: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"]), LEvent(Yukari.spawn, [(500, 500)])],
     1.3: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
     1.6: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
     1.9: [LEvent(TestEnemy.spawn, [(0, 0)]), LEvent(TestEnemy.spawn, [(1000, 0), "right"])],
