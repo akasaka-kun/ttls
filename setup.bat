@@ -1,1 +1,1 @@
-pip install numpy pygame
+pip install numpy pygame bezier
