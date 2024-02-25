@@ -1,9 +1,7 @@
 import math
 
 import numpy
-import numpy as np
 import pygame
-from pygame import gfxdraw
 
 import misc
 import projectile
@@ -88,8 +86,8 @@ class Player(Renderable):
         self.spirit_selection_total_cooldown = 0
         self.spirit_wheel_effect = Vfx(self.spirit_wheel_surface)
 
-        self.spirit_wheel_slice = pygame.image.load("textures/spirit selection slice.png")
-        self.spirit_wheel_slice = pygame.transform.scale(pygame.image.load("textures/spirit selection slice.png"), np.array(self.spirit_wheel_slice.get_size()) * 0.16)
+        self.spirit_wheel = pygame.transform.scale(pygame.image.load("textures/spirit selection.png"), (394/60*self.width, 394/60*self.height))
+        self.spirit_wheel_size = self.spirit_wheel.get_size()
 
         self.selecting_spirit = ""
         self.spirit_selection_coyote_time = self.SPIRIT_SELECTION_COYOTE_TIME
@@ -125,8 +123,8 @@ class Player(Renderable):
         if self.spirit_wheel_time == 0 and self.spirit_selection_cooldown == 0:
             return pygame.Surface((0, 0)), pygame.Rect([0, 0, 0, 0])
 
-        offset = numpy.array([25, 25])
-        rect = pygame.Rect(self.pos - offset, [self.width, self.height] + offset * 2)
+        offset = (self.spirit_wheel_size - numpy.array([40, 40])) // 2
+        rect = pygame.Rect(self.pos - offset, [self.spirit_wheel.get_height(), self.spirit_wheel.get_height()])
         surf = pygame.Surface(rect.size).convert_alpha()
         surf.fill((0, 0, 0, 0))
         res = surf.copy()
@@ -137,12 +135,17 @@ class Player(Renderable):
             misc.arc(res, (200, 0, 0), res.get_rect().center, 25, -90, -90 + (self.spirit_selection_cooldown / self.spirit_selection_total_cooldown) * 360, 3)
             return res, rect
 
-        directionToSlice = {"spiritSelectUp": 3, "spiritSelectUpRight": 2, "spiritSelectDownRight": 1, "spiritSelectDown": 0, "spiritSelectDownLeft": 5, "spiritSelectUpLeft": 4}
-        for i in range(6):
-            rotated = pygame.transform.rotate(self.spirit_wheel_slice, 60 * (i + 3))
-            print(self.selecting_spirit, directionToSlice[self.selecting_spirit])
-            if directionToSlice[self.selecting_spirit] == i: rotated = pygame.transform.scale(rotated, np.array(rotated.get_size()) * 1.4)
-            res.blit(rotated, res.get_rect().center + np.multiply((math.sin(i / 3 * math.pi), math.cos(i / 3 * math.pi)), [30, 30]) + [0, 0] - np.divide(rotated.get_size(), 2))
+        if self.selecting_spirit:
+            directionToSlice = {"spiritSelectUp": 4, "spiritSelectUpRight": 5, "spiritSelectDownRight": 0, "spiritSelectDown": 1, "spiritSelectDownLeft": 2, "spiritSelectUpLeft": 3}
+            highlights = math.pi / 3 * directionToSlice[self.selecting_spirit], math.pi / 3 * (directionToSlice[self.selecting_spirit] + 1)
+            radius = res.get_width()//2 + 40
+            highlight_points = [res.get_rect().center, (math.cos(highlights[0]) * radius, math.sin(highlights[0]) * radius) + numpy.asarray(res.get_rect().center), (math.cos(highlights[1]) * radius, math.sin(highlights[1]) * radius) + numpy.asarray(res.get_rect().center)]
+            triangle = pygame.Surface(res.get_size())
+            pygame.draw.polygon(triangle, (255, 255, 255), highlight_points)
+        res.blit(self.spirit_wheel, res.get_rect().topleft)
+        if self.selecting_spirit:
+            # noinspection PyUnboundLocalVariable
+            res.blit(triangle, res.get_rect().topleft, special_flags=pygame.BLEND_MULT)
 
         return res, rect
 
@@ -225,7 +228,6 @@ class Player(Renderable):
                     for direction in self.controller.actions:
                         if direction not in ["up", "left", "down", "right"]:
                             continue
-                        print(direction)
                         match direction:
                             case "left" if "up" in self.controller.actions:
                                 self.selecting_spirit = "spiritSelectUpLeft"
