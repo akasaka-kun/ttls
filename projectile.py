@@ -54,3 +54,8 @@ class Danmaku(pygame.sprite.Group):
     @abc.abstractmethod
     def new_bullet() -> dict:
         return {}
+
+
+class Anchor:
+    def __init__(self, pos):
+        self.pos = pos

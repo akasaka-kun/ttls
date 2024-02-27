@@ -1,10 +1,11 @@
 import math
 import operator
 
+import beziers.point
 import numpy
 import pygame
 import beziers.cubicbezier as Curve
-from typing import Generator, Callable
+from typing import Generator, Callable, List
 
 import GLOBAL
 from misc import action_repeat
@@ -90,14 +91,21 @@ class Enemy:
             self.x, self.y = pos
 
     @action_repeat
-    def path(self, curvePoints, time: float = None, **kwargs):
+    def path(self, curvePoints: List[beziers.point.Point], time: float = None, easing: Callable[[float], float] = lambda x: x, **kwargs):
+
+        time = easing(time)
+
         if len(curvePoints) == 3:
             curve = Curve.QuadraticBezier(*curvePoints)
+            pat = curve.pointAtTime(time).rounded()
         elif len(curvePoints) == 4:
             curve = Curve.CubicBezier(*curvePoints)
+            pat = curve.pointAtTime(time).rounded()
+        elif len(curvePoints) == 2:
+            pat = curvePoints[0].lerp(curvePoints[1], time)
         else:
             raise ValueError(f"path has invalid amount of points : {len(curvePoints)}")
-        pat = curve.pointAtTime(time).rounded()
+
         self.x, self.y = pat.x, pat.y
 
     # noinspection PyMethodMayBeStatic
